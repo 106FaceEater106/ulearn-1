@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Clones
 {
 	public class CloneVersionSystem : ICloneVersionSystem
-	{
-	
-        private readonly Dictionary<int, Clone> _clones = new Dictionary<int, Clone>
+    {
+
+        private readonly Dictionary<int, Clone> clones = new Dictionary<int, Clone>
         {
             {1, new Clone()}
         };
 
-        private int _lastCloneNumber = 1;
+        private int lastCloneNumber = 1;
 
 		public string Execute(string query)
         {
@@ -22,21 +20,20 @@ namespace Clones
             switch (split[0])
             {
                 case "learn":
-                    _clones[cloneNumber].Add(split[2]);
+                    clones[cloneNumber].Add(split[2]);
                     break;
                 case "rollback":
-                    _clones[cloneNumber].Undo();
+                    clones[cloneNumber].Undo();
                     break;
                 case "relearn":
-                    _clones[cloneNumber].Redo();
+                    clones[cloneNumber].Redo();
                     break;
                 case "clone":
-                    _lastCloneNumber++;
-                    _clones.Add(_lastCloneNumber, _clones[cloneNumber].CloneThis());
+                    lastCloneNumber++;
+                    clones.Add(lastCloneNumber, clones[cloneNumber].CloneThis());
                     break;
                 case "check":
-                    if (_clones[cloneNumber].Progs.Count == 0) return "basic";
-                    return _clones[cloneNumber].Progs.Peek();
+                    return clones[cloneNumber].Check();
             }
 
             return null;
@@ -45,36 +42,83 @@ namespace Clones
 
     public class Clone
     {
-        public readonly Stack<string> Progs;
-        public readonly Stack<string> ProgsStory;
+        private readonly LinkedStack<string> progs;
+        private LinkedStack<string> progsUndo;
 
-        public Clone( Stack<string> progs, Stack<string> progsStory)
+        public Clone( LinkedStack<string> progs, LinkedStack<string> progsUndo)
         {
-            Progs = progs;
-            ProgsStory = progsStory;
+            this.progs = progs;
+            this.progsUndo = progsUndo;
         }
 
-        public Clone() : this(new Stack<string>(), new Stack<string>()){}
+        public Clone() : this(new LinkedStack<string>(), new LinkedStack<string>()){}
 
         public void Undo()
         {
-            ProgsStory.Push(Progs.Pop());
+            progsUndo.Push(progs.Pop());
         }
         public void Redo()
         {
-            Progs.Push(ProgsStory.Pop());
+            progs.Push(progsUndo.Pop());
         }
 
         public void Add(string str)
         {
-            ProgsStory.Clear();
-            Progs.Push(str);
+            if(progsUndo.Head != null)
+                progsUndo = new LinkedStack<string>();
+            progs.Push(str);
+        }
+
+        public string Check()
+        {
+            if (progs.Head == null) return "basic";
+            return progs.Head.Value;
         }
 
         public Clone CloneThis()
         {
-            return new Clone(new Stack<string>(Progs.Reverse()), new Stack<string>(ProgsStory));
+            return new Clone(progs.Copy(), progsUndo.Copy());
         }
     }
 
+    public class LinkedStack<T>
+    {
+        public LinkedStackNode<T> Head { get; private set; }
+
+        public void Push(T item)
+        {
+            var newCell = new LinkedStackNode<T>(item) {Next = Head};
+            Head = newCell;
+        }
+
+        public T Pop()
+        {
+            var oldHead = Head;
+            Head = Head.Next;
+           // oldHead.Next = null;
+            return oldHead.Value;
+        }
+
+        public LinkedStack<T> Copy()
+        {
+            return new LinkedStack<T>(Head);
+        }
+
+        public LinkedStack() : this(null){}
+        public LinkedStack(LinkedStackNode<T> head)
+        {
+            Head = head;
+        }
+    }
+
+    public class LinkedStackNode<T>
+    {
+        public LinkedStackNode<T> Next { get; set; }
+        public T Value;
+
+        public LinkedStackNode(T value)
+        {
+            Value = value;
+        }
+    }
 }
