@@ -1,46 +1,29 @@
 using System;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 
 namespace MyPhotoshop
 {
 	public class Photo
 	{
-		public int width;
-		public int height;
-		public Pixel[,] data;
+		public readonly int Width;
+		public readonly int Height;
+		private Pixel[,] data;
+
+        public Photo(int width, int height)
+        {
+            Width = width;
+            Height = height;
+            data = new Pixel[width, height];
+        }
+
+        public Pixel this[int x, int y]
+        {
+            get => data[x,y];
+            set => data[x, y] = value;
+        }
 	}
 
-    public struct Pixel
-    {
-        public double R;
-        public double G;
-        public double B;
-
-        public Pixel(double r, double g, double b)
-        {
-            R = r;
-            G = g;
-            B = b;
-        }
-
-        public Pixel WithRed(double red)
-        {
-            return new Pixel(red, G, B);
-        }
-        public Pixel WithGreen(double green)
-        {
-            return new Pixel(R, green, B);
-        }
-        public Pixel WithBlue(double blue)
-        {
-            return new Pixel(R, G, blue);
-        }
-
-        public static Pixel operator*(Pixel pixel, double modifier)
-        {
-            return new Pixel(pixel.R*modifier, pixel.G*modifier, pixel.B*modifier);
-        }
-    }
 
 }
 
